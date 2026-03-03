@@ -7,7 +7,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 const MAX_ZNUENI = 4;
-const COOLDOWN_MS = 30 * 1000;
+const COOLDOWN_MS = 120 * 1000;
 
 // PostgreSQL connection
 const pool = new Pool({
@@ -101,6 +101,26 @@ app.post('/api/submit-name', async (req, res) => {
       'SELECT name, TO_CHAR(claimed_at, \'HH24:MI\') as time FROM winners ORDER BY id'
     );
     res.json({ success: true, winners: allWinners.rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'db_error' });
+  }
+});
+
+// POST db-view (password protected state view)
+app.post('/api/db-view', async (req, res) => {
+  const { secret } = req.body;
+  if (secret !== (process.env.RESET_SECRET || 'znueni-reset')) {
+    return res.status(403).json({ error: 'forbidden' });
+  }
+  try {
+    const stateRes = await pool.query('SELECT claimed FROM state WHERE id = 1');
+    const winnersRes = await pool.query('SELECT name, TO_CHAR(claimed_at, \'HH24:MI\') as time FROM winners ORDER BY id');
+    res.json({
+      claimed: stateRes.rows[0].claimed,
+      max: MAX_ZNUENI,
+      winners: winnersRes.rows
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'db_error' });
