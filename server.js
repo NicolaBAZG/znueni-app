@@ -8,7 +8,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const DATA_FILE = path.join(__dirname, 'data.json');
 const MAX_ZNUENI = 4;
-const COOLDOWN_MS = 30 * 1000; // 30 seconds per IP
+const COOLDOWN_MS = 60 * 1000; // 30 seconds per IP
 
 // Load or initialize data
 function loadData() {
