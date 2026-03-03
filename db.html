@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Znüni DB Viewer</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;900&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: #fffbf5;
+      display: flex; flex-direction: column;
+      align-items: center; padding: 40px 16px; gap: 24px;
+      min-height: 100vh;
+    }
+    h1 { font-size: 24px; font-weight: 900; color: #1e1e2e; }
+    h1 span { color: #f97316; }
+
+    /* Login */
+    .login-box {
+      background: #fff; border: 2px solid #e5e7eb;
+      border-radius: 20px; padding: 28px 32px;
+      display: flex; flex-direction: column; gap: 14px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+      width: 100%; max-width: 320px;
+    }
+    .login-label { font-size: 14px; font-weight: 700; color: #6b7280; text-align: center; }
+    input {
+      padding: 10px 16px; font-family: 'Nunito', sans-serif;
+      font-size: 15px; font-weight: 700;
+      border: 2px solid #e5e7eb; border-radius: 50px;
+      outline: none; color: #1e1e2e;
+    }
+    input:focus { border-color: #f97316; }
+    .btn {
+      padding: 12px; font-family: 'Nunito', sans-serif;
+      font-size: 16px; font-weight: 900; color: #fff;
+      background: linear-gradient(135deg, #f97316, #ef4444);
+      border: none; border-radius: 50px; cursor: pointer;
+      box-shadow: 0 4px 14px rgba(249,115,22,0.4);
+      transition: transform 0.15s ease;
+    }
+    .btn:hover { transform: scale(1.03); }
+    .err { font-size: 13px; font-weight: 700; color: #ef4444; text-align: center; }
+
+    /* Dashboard */
+    .dashboard { display: none; flex-direction: column; align-items: center; gap: 20px; width: 100%; max-width: 480px; }
+    .dashboard.visible { display: flex; }
+
+    .stat-row { display: flex; gap: 12px; width: 100%; }
+    .stat-box {
+      flex: 1; background: #fff8f0; border: 2px solid #fed7aa;
+      border-radius: 16px; padding: 16px;
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+    }
+    .stat-num { font-size: 32px; font-weight: 900; color: #f97316; }
+    .stat-label { font-size: 12px; font-weight: 700; color: #9a5a1f; text-transform: uppercase; letter-spacing: 1px; }
+
+    .table-box {
+      width: 100%; background: #fff;
+      border: 2px solid #e5e7eb; border-radius: 20px;
+      overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    }
+    .table-title {
+      padding: 14px 20px; font-size: 13px; font-weight: 700;
+      color: #6b7280; text-transform: uppercase; letter-spacing: 1px;
+      border-bottom: 2px solid #e5e7eb; background: #f9fafb;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      padding: 10px 16px; text-align: left;
+      font-size: 12px; font-weight: 900; color: #9ca3af;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      border-bottom: 1px solid #f3f4f6;
+    }
+    td {
+      padding: 12px 16px; font-size: 15px; font-weight: 700;
+      color: #1e1e2e; border-bottom: 1px solid #f3f4f6;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fff8f0; }
+    .badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 24px; height: 24px; border-radius: 50%;
+      background: #fed7aa; color: #f97316;
+      font-size: 12px; font-weight: 900;
+    }
+    .empty-row td { color: #9ca3af; text-align: center; padding: 24px; }
+
+    .refresh-btn {
+      padding: 10px 24px; font-family: 'Nunito', sans-serif;
+      font-size: 14px; font-weight: 900; color: #f97316;
+      background: #fff; border: 2px solid #fed7aa;
+      border-radius: 50px; cursor: pointer;
+      transition: transform 0.15s ease, background 0.2s;
+    }
+    .refresh-btn:hover { background: #fff8f0; transform: scale(1.03); }
+  </style>
+</head>
+<body>
+
+  <h1>🥐 Znüni <span>DB Viewer</span></h1>
+
+  <!-- Login -->
+  <div class="login-box" id="login-box">
+    <div class="login-label">Passwort eingeben</div>
+    <input id="secret" type="password" placeholder="Passwort..." />
+    <button class="btn" onclick="login()">🔍 Anzeigen</button>
+    <div class="err" id="login-err"></div>
+  </div>
+
+  <!-- Dashboard -->
+  <div class="dashboard" id="dashboard">
+    <div class="stat-row">
+      <div class="stat-box">
+        <div class="stat-num" id="stat-claimed">–</div>
+        <div class="stat-label">Beansprucht</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" id="stat-remaining">–</div>
+        <div class="stat-label">Verfügbar</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" id="stat-winners">–</div>
+        <div class="stat-label">Eingetragen</div>
+      </div>
+    </div>
+
+    <div class="table-box">
+      <div class="table-title">🏆 Gewinnerliste</div>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Uhrzeit</th>
+          </tr>
+        </thead>
+        <tbody id="winners-tbody"></tbody>
+      </table>
+    </div>
+
+    <button class="refresh-btn" onclick="loadData()">🔄 Aktualisieren</button>
+  </div>
+
+<script>
+  let currentSecret = '';
+
+  async function login() {
+    const secret = document.getElementById('secret').value;
+    const err = document.getElementById('login-err');
+    err.textContent = '';
+
+    // Validate by trying a reset dry-run — instead use /api/state and check secret via a dedicated endpoint
+    // We'll verify by calling /api/db-view with the secret
+    try {
+      const res = await fetch('/api/db-view', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ secret })
+      });
+      if (res.status === 403) {
+        err.textContent = '❌ Falsches Passwort';
+        return;
+      }
+      const data = await res.json();
+      currentSecret = secret;
+      document.getElementById('login-box').style.display = 'none';
+      document.getElementById('dashboard').classList.add('visible');
+      renderData(data);
+    } catch {
+      err.textContent = '❌ Verbindungsfehler';
+    }
+  }
+
+  async function loadData() {
+    try {
+      const res = await fetch('/api/db-view', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ secret: currentSecret })
+      });
+      const data = await res.json();
+      renderData(data);
+    } catch {}
+  }
+
+  function renderData(data) {
+    document.getElementById('stat-claimed').textContent = data.claimed;
+    document.getElementById('stat-remaining').textContent = data.max - data.claimed;
+    document.getElementById('stat-winners').textContent = data.winners.length;
+
+    const tbody = document.getElementById('winners-tbody');
+    tbody.innerHTML = '';
+    if (data.winners.length === 0) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="3">Noch keine Gewinner</td></tr>';
+      return;
+    }
+    data.winners.forEach((w, i) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><span class="badge">${i + 1}</span></td>
+        <td>${escapeHtml(w.name)} 🥐</td>
+        <td>${w.time || '–'}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  document.getElementById('secret').addEventListener('keydown', e => {
+    if (e.key === 'Enter') login();
+  });
+
+  function escapeHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+</script>
+</body>
+</html>
