@@ -88,7 +88,15 @@
     }
     .empty-row td { color: #9ca3af; text-align: center; padding: 24px; }
 
-    .refresh-btn {
+    .delete-btn {
+      padding: 4px 12px; font-family: 'Nunito', sans-serif;
+      font-size: 12px; font-weight: 900; color: #ef4444;
+      background: #fee2e2; border: 2px solid #fca5a5;
+      border-radius: 50px; cursor: pointer;
+      transition: transform 0.15s ease, background 0.2s;
+    }
+    .delete-btn:hover { background: #fecaca; transform: scale(1.05); }
+    .info-msg { font-size: 13px; font-weight: 700; color: #16a34a; text-align: center; min-height: 20px; }
       padding: 10px 24px; font-family: 'Nunito', sans-serif;
       font-size: 14px; font-weight: 900; color: #f97316;
       background: #fff; border: 2px solid #fed7aa;
@@ -135,12 +143,14 @@
             <th>#</th>
             <th>Name</th>
             <th>Uhrzeit</th>
+            <th></th>
           </tr>
         </thead>
         <tbody id="winners-tbody"></tbody>
       </table>
     </div>
 
+    <div class="info-msg" id="info-msg"></div>
     <button class="refresh-btn" onclick="loadData()">🔄 Aktualisieren</button>
   </div>
 
@@ -194,7 +204,7 @@
     const tbody = document.getElementById('winners-tbody');
     tbody.innerHTML = '';
     if (data.winners.length === 0) {
-      tbody.innerHTML = '<tr class="empty-row"><td colspan="3">Noch keine Gewinner</td></tr>';
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="4">Noch keine Gewinner</td></tr>';
       return;
     }
     data.winners.forEach((w, i) => {
@@ -203,9 +213,28 @@
         <td><span class="badge">${i + 1}</span></td>
         <td>${escapeHtml(w.name)} 🥐</td>
         <td>${w.time || '–'}</td>
+        <td><button class="delete-btn" onclick="deleteWinner(${w.id}, '${escapeHtml(w.name)}')">🗑 Löschen</button></td>
       `;
       tbody.appendChild(tr);
     });
+  }
+
+  async function deleteWinner(id, name) {
+    if (!confirm(`"${name}" wirklich löschen? Das Znüni wird wieder freigegeben.`)) return;
+    const msg = document.getElementById('info-msg');
+    try {
+      const res = await fetch('/api/delete-winner', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ secret: currentSecret, id })
+      });
+      const data = await res.json();
+      renderData(data);
+      msg.textContent = `✅ "${name}" gelöscht — 1 Znüni wieder verfügbar!`;
+      setTimeout(() => msg.textContent = '', 4000);
+    } catch {
+      msg.textContent = '❌ Fehler beim Löschen';
+    }
   }
 
   document.getElementById('secret').addEventListener('keydown', e => {
