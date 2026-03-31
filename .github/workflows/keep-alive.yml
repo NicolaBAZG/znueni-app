@@ -13,4 +13,10 @@ jobs:
         run: |
           echo "🥐 Pinging znueni-app..."
           curl -f https://znueni-app.onrender.com
-          echo "✅ App is awake!"
+          echo "✅ Znüni App is awake!"
+
+      - name: Ping Easter Egg App
+        run: |
+          echo "🐣 Pinging easter-egg-app..."
+          curl -f https://easter-egg-app-0y5x.onrender.com/
+          echo "✅ Easter Egg App is awake!"
