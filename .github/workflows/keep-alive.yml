@@ -1,0 +1,16 @@
+name: Keep Alive Ping
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'  # alle 10 Minuten
+  workflow_dispatch:         # manuell auslösbar im GitHub UI
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Znüni App
+        run: |
+          echo "🥐 Pinging znueni-app..."
+          curl -f https://znueni-app.onrender.com
+          echo "✅ App is awake!"
